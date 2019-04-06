@@ -46,20 +46,28 @@ inline std::string &trim(std::string &s)
     return ltrim(rtrim(s));
 }
 
-vector<string> split_string(string line, char delimiter)
+std::vector<int> split_string_to_int(std::string str, std::string sep)
 {
-    cout << "REACHED HERE :) "<< line.length() << endl;
-    istringstream tokenStream(trim(line));
-    string intermediate;
-    vector<string> tokens;
-    int counter = 0;
-    while (getline(tokenStream, intermediate, delimiter))
+    // char *cstr = const_cast<char *>(str.c_str());
+    // char *current;
+    // std::vector<std::string> arr;
+    // current = strtok(cstr, sep.c_str());
+    // while (current != NULL)
+    // {
+    //     //cout << current << endl;
+    //     arr.push_back(current);
+    //     current = strtok(NULL, sep.c_str());
+    // }
+    std::stringstream in(str);
+    std::vector<int> a;
+    int temp;
+    while (in >> temp)
     {
-        tokens.push_back(intermediate);
-        counter+=intermediate.length();
-        cout << counter++ << endl;
+        //cout << temp << endl;
+        a.push_back(temp);
     }
-    return tokens;
+    
+    return a;
 }
 
 vector<lis_input> retrive_cache_info(string file_path)
@@ -73,7 +81,8 @@ vector<lis_input> retrive_cache_info(string file_path)
         while (getline(file, line))
         {
             cout << line << endl;
-            vector<string> param_splits = split_string(line, ' ');
+            string sm_line = line + "\0";
+            vector<int> param_splits = split_string_to_int(sm_line, " ");
             lis_input cache_params;
             // cout << "REACHED HERE :)" << endl;
             // istringstream check1((line));
@@ -86,9 +95,9 @@ vector<lis_input> retrive_cache_info(string file_path)
             //     cout << "REACHED HERE :) 3 "<< intermediate << endl;
             //     param_splits.push_back(intermediate);
             // }
-            cache_params.starting_block = stoi(param_splits[0]);
-            cache_params.number_of_blocks = stoi(param_splits[1]);
-            cache_params.request_number = stoi(param_splits[4]);
+            cache_params.starting_block = (param_splits[0]);
+            cache_params.number_of_blocks = (param_splits[1]);
+            cache_params.request_number = (param_splits[4]);
             cache_blocks.push_back(cache_params);
         }
     }
@@ -112,6 +121,7 @@ int main(int argc, char *argv[])
 
     string trace_file_name = argv[2];
     trace_file_name += ".lis";
+    vector<int> sentence = split_string_to_int("230027 8 0 0", " ");
     vector<lis_input> cache_blocks = retrive_cache_info(trace_file_name);
     cout << cache_blocks.at(1).request_number << endl;
 }
