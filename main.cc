@@ -58,8 +58,6 @@ class Cache_Linked_List {
 public:
     int length;
     int cache_access;
-    map<int,int> index_hits;
-    map<int,int> index_misses;
     int num_hits;
     int num_misses;
     int MAX_NUM_PAGES;
@@ -108,11 +106,6 @@ public:
         int node_index = node->index;
         this->del(node);
         this->add_front(node_index);
-        if(this->index_hits.find(node->index) == this->index_hits.end()){
-            this->index_hits[node->index] = 1;
-        }else{
-            this->index_hits[node->index]++;
-        }
         this->num_hits++;
         this->cache_access++;
     }
@@ -126,11 +119,6 @@ public:
             //Remove the tail Item from the linked_list and add the current_block to the head of the linked list
             this->remove_last();
             this->add_front(index);
-        }
-        if(this->index_misses.find(index) == this->index_misses.end()){
-            this->index_misses[index] = 1;
-        }else{
-            this->index_misses[index]++;
         }
         this->num_misses++;
         this->cache_access++;
@@ -259,7 +247,7 @@ public:
         cout << "Number Of Hits : " << this->num_hits << endl;
         cout << "Number Of Misses : " << this->num_misses << endl;
         cout << "Total Cache Visits : " << this->cache_access << endl;
-        cout << "Hit Ratio : " << (float)(this->num_hits)/(float)(this->cache_access) << endl;
+        cout << "Hit Ratio : " << (this->num_hits) << "/" << (this->cache_access) << " = " << (float)(this->num_hits)/(float)(this->cache_access) << endl;
     }
 };
 
