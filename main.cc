@@ -91,29 +91,21 @@ public:
     void access_cache(int start_block_index, int block_size) {
         // for each block from the start_block_index find the node that matches the index of the given block
         for (int i = start_block_index; i < start_block_index + block_size; i++) {
-            //cache_access++
             int current_block_index = i;
-            //cout << "GETTING NODE " << current_block_index << endl;
             node_presence node_found = this->get_node(current_block_index);
             //if the block is present
             if(node_found.found){ // The Node Was Found.
                 //move it to the head of the linked_list.
-                //cout << "Cache HIT " << current_block_index <<" "<< this->length << endl;
                 this->hit(node_found.node);
-                //hit++
             }else{
-                //cout << "Cache MISS " << current_block_index <<" "<< this->length <<endl;
                 this->miss(current_block_index);
             }
-            //else
-            //miss++
         }
     }
 
     void hit(Node* node) {
         int node_index = node->index;
         this->del(node);
-        //TODO : Check if the add_front method can be overridden to get accept node as input.  
         this->add_front(node_index);
         if(this->index_hits.find(node->index) == this->index_hits.end()){
             this->index_hits[node->index] = 1;
@@ -144,7 +136,6 @@ public:
     }
 
     void remove_last() { //Remove the Last Item from the List.
-        //cout << "Deleting Node :" << this->tail->index << endl;
         Node* last_node = this->tail;
         Node* previous_to_last_node = last_node->prev;
         previous_to_last_node->next = NULL;
