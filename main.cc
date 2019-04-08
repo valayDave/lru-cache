@@ -285,6 +285,7 @@ public:
         cout << "Number Of Hits : " << this->num_hits << endl;
         cout << "Number Of Misses : " << this->num_misses << endl;
         cout << "Total Cache Visits : " << this->cache_access << endl;
+        cout << "Hit Ratio : " << (float)(this->num_hits)/(float)(this->cache_access) << endl;
     }
 };
 
