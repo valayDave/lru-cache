@@ -147,11 +147,9 @@ public:
         delete last_node;
     }
     void add_front(int index) {
-        //cout << "Adding To Front : " << index << endl;
         Node* node = new Node();
         node->index = index;
         node->next = this->head;
-
         if (head == NULL) {
             this->head = node;
             this->tail = node;
@@ -174,35 +172,15 @@ public:
 
     //Can give Found Node Or Can Give Tail.
     node_presence get_node(int index) {
-        //TODO : Lookup in the Map to Find the Key. 
+        //Lookup in the Map to Find the Key. 
         node_presence node_found;
         Node* head = this->head;
         node_found.found = false;
-        int itr = 0;
         node_found.node = head;
-        // //cout << "Finding Node : " << index << " " << this->head << endl;
-        // while (head!=NULL) {
-        //     if (head->index == index) {
-        //         node_found.node = head;
-        //         node_found.found = true;
-        //         //cout <<"Cache Checked : " << itr << end;
-        //         break;
-        //     }
-        //     // if(index== 3677739){
-        //     //     cout << itr++ << endl;
-        //     // }
-        //     itr++;
-        //     head = head->next;
-        // }
         if(!(this->page_indexes.find(index) == this->page_indexes.end())){
             node_found.node = this->page_indexes[index];
             node_found.found = true;
         }
-        // if(head!=NULL){
-        //     cout <<"Cache Checked : " << index <<" " << head->index <<" " <<itr << node_found.found << endl;
-        // }else{
-        //     cout <<"Cache Checked : " << index <<" " << head <<" " << itr << node_found.found <<  endl;
-        // }
         return node_found;
     }
 
@@ -210,7 +188,6 @@ public:
         Node* node = new Node();
         node->index = index;
         node->next = NULL;
-
         if (head == NULL) {
             this->head = node;
             this->tail = node;
@@ -226,23 +203,17 @@ public:
         Node* p = new Node;
         p->index = value;
         p->next = a->next;
-
         a->next = p;
         p->prev = a;
         this->length++;
     }
 
     void del(Node* deletion_node) {
-        //cout << "Deleting Node :" << deletion_node->index << endl;
         Node* prev_node;
-        //cout << "Deleting Node 1:" << deletion_node->index << endl;
         Node* next_node;
         next_node = deletion_node->next;
         prev_node = deletion_node->prev;
-        //cout << "Deleting Node 2:" << deletion_node->index << endl;
-
         if(deletion_node == this->head){
-            //cout << " Deleting Head " <<endl;
             next_node->prev = NULL;
             this->head = next_node;
         }else if (deletion_node == this->tail){
@@ -255,12 +226,9 @@ public:
             if (next_node != NULL) {
                 next_node->prev = prev_node;
             }
-        }
-    
-        //cout << "Deleting Node 3:" << deletion_node->index << endl;
+        }    
         this->remove_node_from_map(deletion_node->index);
         this->length--;
-        //cout << "Deleting Node 4:" << deletion_node->index << endl;
         delete deletion_node;
     }
 
@@ -269,7 +237,6 @@ public:
         int i = 1;
         while (tail) {
             std::cout << i << ": " << tail->prev << std::endl;
-
             tail = tail->prev;
             i++;
         }
@@ -283,8 +250,6 @@ public:
                 cout << "Breaking " << endl;
                 break;
             }
-            //std::cout << i << " NEXT: " << head->next << std::endl;
-            //std::cout << i << " PREV: " << head->prev << std::endl;
             head = head->next;
             i++;
         }
@@ -355,14 +320,11 @@ void test_lru_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
 }
 
 void check_lru_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
-    int x =0;
     Cache_Linked_List* lru_cache = new Cache_Linked_List(cache_num_pages);
     vector<lis_input>::iterator itr;
     int total = cache_blocks.size();
     for(itr=cache_blocks.begin();itr<cache_blocks.end();itr++){
-        //cout << itr->starting_block << " " << itr->number_of_blocks<< endl;
         lru_cache->access_cache(itr->starting_block,itr->number_of_blocks);
-        //cout << "Number Of Blocks Completed : " << ++x  << "Total Number Of Blocks" << total << endl;
     }
     lru_cache->print_cache_stats();
 }
