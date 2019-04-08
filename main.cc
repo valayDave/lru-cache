@@ -63,6 +63,7 @@ public:
     int num_hits;
     int num_misses;
     int MAX_NUM_PAGES;
+    map<int,Node*> page_indexes;
 
     Node* head;
     Node* tail;
@@ -150,6 +151,8 @@ public:
         previous_to_last_node->next = NULL;
         this->tail = previous_to_last_node;
         this->length--;
+        //: Remove From Map.
+        this->remove_node_from_map(last_node->index);
         delete last_node;
     }
     void add_front(int index) {
@@ -165,30 +168,44 @@ public:
             this->head->prev = node;
             this->head = node;
         }
+        //Add to Map. 
+        this->add_node_to_map(index,node);
         this->length++;
-        
+    }
+
+    void add_node_to_map(int index,Node* node){
+        this->page_indexes[index] = node;
+    }
+
+    void remove_node_from_map(int index){
+        this->page_indexes.erase(index);
     }
 
     //Can give Found Node Or Can Give Tail.
     node_presence get_node(int index) {
+        //TODO : Lookup in the Map to Find the Key. 
         node_presence node_found;
         Node* head = this->head;
         node_found.found = false;
         int itr = 0;
         node_found.node = head;
-        //cout << "Finding Node : " << index << " " << this->head << endl;
-        while (head!=NULL) {
-            if (head->index == index) {
-                node_found.node = head;
-                node_found.found = true;
-                //cout <<"Cache Checked : " << itr << end;
-                break;
-            }
-            // if(index== 3677739){
-            //     cout << itr++ << endl;
-            // }
-            itr++;
-            head = head->next;
+        // //cout << "Finding Node : " << index << " " << this->head << endl;
+        // while (head!=NULL) {
+        //     if (head->index == index) {
+        //         node_found.node = head;
+        //         node_found.found = true;
+        //         //cout <<"Cache Checked : " << itr << end;
+        //         break;
+        //     }
+        //     // if(index== 3677739){
+        //     //     cout << itr++ << endl;
+        //     // }
+        //     itr++;
+        //     head = head->next;
+        // }
+        if(!(this->page_indexes.find(index) == this->page_indexes.end())){
+            node_found.node = this->page_indexes[index];
+            node_found.found = true;
         }
         // if(head!=NULL){
         //     cout <<"Cache Checked : " << index <<" " << head->index <<" " <<itr << node_found.found << endl;
@@ -250,6 +267,7 @@ public:
         }
     
         //cout << "Deleting Node 3:" << deletion_node->index << endl;
+        this->remove_node_from_map(deletion_node->index);
         this->length--;
         //cout << "Deleting Node 4:" << deletion_node->index << endl;
         delete deletion_node;
@@ -368,7 +386,6 @@ int main(int argc, char* argv[]) {
 
     string trace_file_name = argv[2];
     trace_file_name += ".lis";
-    vector<int> sentence = split_string_to_int("230027 8 0 0", " ");
     vector<lis_input> cache_blocks = retrive_cache_info(trace_file_name);
     check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
