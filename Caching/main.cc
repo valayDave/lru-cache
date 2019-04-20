@@ -7,6 +7,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -274,6 +275,16 @@ public:
         num_access = 0;
     }
 
+    void hit(){
+        this->num_hits++;
+        this->num_access++;
+    }
+
+    void miss(){
+        this->num_misses++;
+        this->num_access++;
+    }
+
     void access_cache(int start_block_index, int block_size) {
         /**
          * Algorithm : twos LRU caches -> frequently used cache and once accessed cache.
@@ -286,9 +297,11 @@ public:
             node_presence node_top2 = frequently_used_lru_top->get_node(current_block_index);
             node_presence node_top1 = first_time_access_lru_top->get_node(current_block_index); 
             node_presence node_bottom1 = first_time_access_lru_bottom->get_node(current_block_index); 
-            node_presence node_bottom2 = frequently_used_lru_bottom->get_node(current_block_index); 
+            node_presence node_bottom2 = frequently_used_lru_bottom->get_node(current_block_index);
+             
             if(node_top2.found || node_top1.found){ //xt in first_time_access_lru_top || frequently_used_lru_top
-            //TODO :Cache Hit In Arc
+                cout << "Hit IN  T1/T2" << endl;
+                //Cache Hit In Arc
                 if(node_top2.found){
                     //Check if it is not the head. 
                     if(frequently_used_lru_top->head != node_top2.node){
@@ -302,20 +315,26 @@ public:
                     // move xt to top of frequently_used_lru_top
                     frequently_used_lru_top->add_front(current_block_index);
                 }
+                this->hit();
 
             }else if(node_bottom1.found){ // found in first_time_access_lru_bottom
                 //TODO  : Cache Miss In Arc. 
+                cout << "Hit IN  B1" << endl;
                 adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,false);
                 replace_node(false,adaptation_parameter);
                 first_time_access_lru_bottom->del(node_bottom1.node);
                 frequently_used_lru_top->add_front(current_block_index);
+                this->miss();
             }else if(node_bottom2.found){ // found in frequently_used_lru_bottom
+                cout << "Hit IN  B2" << endl;
                 //TODO : Cache Miss ON Arc. 
                 adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,true);
                 replace_node(true,adaptation_parameter);
                 frequently_used_lru_bottom->del(node_bottom2.node);
                 frequently_used_lru_top->add_front(current_block_index);
+                this->miss();
             }else{
+                cout << "Complete Cache Miss" << endl;
                 //TODO: Cache Miss everywhere. 
                 if(first_time_access_lru_bottom->length +first_time_access_lru_top->length == WINDOW_SIZE){
                     if(frequently_used_lru_top->length < WINDOW_SIZE){
@@ -339,8 +358,18 @@ public:
                 }
                 //finally, fetch xt to the cache and move it to MRU position in first_time_access_lru_top
                 first_time_access_lru_top->add_front(current_block_index);
+                this->miss();
             }
+            cout << "Cache Sizes and Adaptation Param : b1 t1 t2 b2 Adptation Param " << first_time_access_lru_bottom->length << " " << first_time_access_lru_top->length << " " <<frequently_used_lru_top->length << " " <<frequently_used_lru_bottom->length << " " << adaptation_parameter << endl;
+            usleep(2000);
         }
+    }
+
+    void print_cache_stats() {
+        cout << "Number Of Hits : " << this->num_hits << endl;
+        cout << "Number Of Misses : " << this->num_misses << endl;
+        cout << "Total Cache Visits : " << this->num_access << endl;
+        cout << "Hit Ratio : " << (this->num_hits) << "/" << (this->num_access) << " = " << (float)(this->num_hits) / (float)(this->num_access) << endl;
     }
 
     int adjust_adaptation_rate(int adaptation_parameter, bool adaptation_param){
@@ -446,6 +475,16 @@ void check_lru_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
     lru_cache->print_cache_stats();
 }
 
+void  check_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages){
+    Arc_Window* arc = new Arc_Window(cache_num_pages);
+    vector<lis_input>::iterator itr;
+    int total = cache_blocks.size();
+    for (itr = cache_blocks.begin(); itr < cache_blocks.end(); itr++) {
+        arc->access_cache(itr->starting_block, itr->number_of_blocks);
+    }
+    arc->print_cache_stats();
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         cout << "Arguements Not Supported" << endl;
@@ -457,7 +496,8 @@ int main(int argc, char* argv[]) {
     string trace_file_name = argv[2];
     trace_file_name += ".lis";
     vector<lis_input> cache_blocks = retrive_cache_info(trace_file_name);
-    check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
+    //check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
+    check_arc_cache(cache_blocks, NUMBER_OF_PAGES);
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     cout << "TIME TAKEN BY THE CODE : " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << endl;
     //TODO : Create a Linked list for each of the values in the trace_file.

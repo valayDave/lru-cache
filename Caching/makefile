@@ -1,2 +1,2 @@
 lru : main.cc
-	g++ main.cc -o lru --std=c++11
+	g++ main.cc -o arc --std=c++11
