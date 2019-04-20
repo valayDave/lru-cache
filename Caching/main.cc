@@ -280,30 +280,100 @@ public:
          * 
         */
 
+        int adaptation_parameter = 0;
         for (int i = start_block_index; i < start_block_index + block_size; i++) {
             int current_block_index = i;
             node_presence node_top2 = frequently_used_lru_top->get_node(current_block_index);
             node_presence node_top1 = first_time_access_lru_top->get_node(current_block_index); 
             node_presence node_bottom1 = first_time_access_lru_bottom->get_node(current_block_index); 
             node_presence node_bottom2 = frequently_used_lru_bottom->get_node(current_block_index); 
-            int adaptation_parameter = 0;
-            if(node_top2.found || node_top1.found){
-            //Case 1 : xt in first_time_access_lru_top || frequently_used_lru_top
-                // move xt to top of frequently_used_lru_top
-            }else if(node_bottom1.found){ // found in first_time_access_lru_bottom
-
-            }else if(node_bottom2.found){ // found in frequently_used_lru_bottom
-
-            }else{
-                //Cache Miss everywhere. 
-                if(first_time_access_lru_bottom->length +first_time_access_lru_top->length == WINDOW_SIZE){
-
+            if(node_top2.found || node_top1.found){ //xt in first_time_access_lru_top || frequently_used_lru_top
+            //TODO :Cache Hit In Arc
+                if(node_top2.found){
+                    //Check if it is not the head. 
+                    if(frequently_used_lru_top->head != node_top2.node){
+                        frequently_used_lru_top->del(node_top2.node);
+                        // move xt to top of frequently_used_lru_top
+                        frequently_used_lru_top->add_front(current_block_index);
+                    }
                 }else{
-                    
+                    //Doubt : Check if Found in first_time_access_lru_top, should it be removed or not. 
+                    first_time_access_lru_top->del(node_top1.node);
+                    // move xt to top of frequently_used_lru_top
+                    frequently_used_lru_top->add_front(current_block_index);
+                }
+
+            }else if(node_bottom1.found){ // found in first_time_access_lru_bottom
+                //TODO  : Cache Miss In Arc. 
+                adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,false);
+                replace_node(false,adaptation_parameter);
+                first_time_access_lru_bottom->del(node_bottom1.node);
+                frequently_used_lru_top->add_front(current_block_index);
+            }else if(node_bottom2.found){ // found in frequently_used_lru_bottom
+                //TODO : Cache Miss ON Arc. 
+                adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,true);
+                replace_node(true,adaptation_parameter);
+                frequently_used_lru_bottom->del(node_bottom2.node);
+                frequently_used_lru_top->add_front(current_block_index);
+            }else{
+                //TODO: Cache Miss everywhere. 
+                if(first_time_access_lru_bottom->length +first_time_access_lru_top->length == WINDOW_SIZE){
+                    if(frequently_used_lru_top->length < WINDOW_SIZE){
+                        //Delete LRU page in B1. REPLACE .
+                        first_time_access_lru_bottom->remove_last();
+                        replace_node(false,adaptation_parameter);
+
+                    }else{
+                        first_time_access_lru_top->remove_last();
+                    }
+                }else if (first_time_access_lru_bottom->length +first_time_access_lru_top->length < WINDOW_SIZE){
+                    if(first_time_access_lru_bottom->length +first_time_access_lru_top->length + frequently_used_lru_top->length + frequently_used_lru_bottom->length >= WINDOW_SIZE){
+                        if(first_time_access_lru_bottom->length +first_time_access_lru_top->length + frequently_used_lru_top->length + frequently_used_lru_bottom->length == 2*WINDOW_SIZE){
+                            frequently_used_lru_bottom->remove_last();
+                        }
+                        replace_node(false,adaptation_parameter);
+                    }
+                }else{
+                    //This Case Should not be working. 
+                    cout << ": This Should Not Be Reached : " << endl;
                 }
                 //finally, fetch xt to the cache and move it to MRU position in first_time_access_lru_top
+                first_time_access_lru_top->add_front(current_block_index);
             }
         }
+    }
+
+    int adjust_adaptation_rate(int adaptation_parameter, bool adaptation_param){
+        int delta = 0;
+        if(adaptation_param){ // Frequency Adaptation
+            if(frequently_used_lru_bottom->length >= first_time_access_lru_bottom->length){
+                delta = 1;
+            }else{
+                delta = static_cast<int>(first_time_access_lru_bottom->length/frequently_used_lru_bottom->length);
+            }
+            return max(adaptation_param-delta,0);
+        }else{ // first_time_access Adaptation
+            if(first_time_access_lru_bottom->length >= frequently_used_lru_bottom->length){
+                delta = 1;
+            }else{
+                delta = static_cast<int>(frequently_used_lru_bottom->length/first_time_access_lru_bottom->length);
+            }
+            return min(adaptation_param+delta,WINDOW_SIZE);
+        }
+
+    }
+    void replace_node(bool frequenty_used_cache_presence,int adaptation_parameter){
+        //Fill The Method Here. 
+        if((first_time_access_lru_top->length > 0) && ((first_time_access_lru_top->length > adaptation_parameter) || (first_time_access_lru_top->length == adaptation_parameter && frequenty_used_cache_presence))){
+            int transfer_index = first_time_access_lru_top->tail->index;    
+            first_time_access_lru_top->remove_last();
+            first_time_access_lru_bottom->add_front(transfer_index);
+        }else{
+            int transfer_index = frequently_used_lru_top->tail->index;    
+            frequently_used_lru_top->remove_last();
+            frequently_used_lru_top->add_front(transfer_index);
+        }
+
     }
 };
 
