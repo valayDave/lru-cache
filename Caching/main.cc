@@ -251,6 +251,31 @@ public:
     }
 };
 
+class Arc_Window{
+public:
+    int WINDOW_SIZE;
+    int num_hits;
+    int num_misses;
+    int num_access;
+    Arc_Window();
+    Cache_Linked_List* frequently_used_lru;
+    Cache_Linked_List* first_time_access_lru;
+
+    Arc_Window(int window_size){
+        WINDOW_SIZE = window_size;
+        frequently_used_lru = new Cache_Linked_List(window_size);
+        first_time_access_lru = new Cache_Linked_List(window_size);
+        num_hits   = 0;
+        num_misses = 0;
+        num_access = 0;
+    }
+
+    void access_cache(int start_block_index, int block_size){
+
+    }
+
+};
+
 std::vector<int> split_string_to_int(std::string str, std::string sep) {
     std::stringstream in(str);
     std::vector<int> a;
@@ -283,6 +308,10 @@ vector<lis_input> retrive_cache_info(string file_path) {
     }
 
     return cache_blocks;
+}
+
+void test_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages){
+
 }
 
 void test_lru_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
