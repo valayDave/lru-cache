@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
@@ -6,8 +7,6 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/un.h>
-#include <chrono>
-
 
 using namespace std;
 
@@ -47,7 +46,7 @@ public:
     string data;
 };
 
-struct  node_presence {
+struct node_presence {
     bool found;
     Node* node;
 };
@@ -61,7 +60,7 @@ public:
     int num_hits;
     int num_misses;
     int MAX_NUM_PAGES;
-    map<int,Node*> page_indexes;
+    map<int, Node*> page_indexes;
 
     Node* head;
     Node* tail;
@@ -71,9 +70,9 @@ public:
     Cache_Linked_List(int num_pages) {
         this->length = 0;
         this->head = NULL;
-        this->cache_access =0;
-        this->num_hits =0;
-        this->num_misses =0;
+        this->cache_access = 0;
+        this->num_hits = 0;
+        this->num_misses = 0;
         this->MAX_NUM_PAGES = num_pages;
     }
 
@@ -93,10 +92,10 @@ public:
             int current_block_index = i;
             node_presence node_found = this->get_node(current_block_index);
             //if the block is present
-            if(node_found.found){ // The Node Was Found.
+            if (node_found.found) { // The Node Was Found.
                 //move it to the head of the linked_list.
                 this->hit(node_found.node);
-            }else{
+            } else {
                 this->miss(current_block_index);
             }
         }
@@ -112,10 +111,10 @@ public:
 
     void miss(int index) {
         //if the linked_list is not greater than max number of pages
-        if(this->length < this->MAX_NUM_PAGES){
+        if (this->length < this->MAX_NUM_PAGES) {
             //add it to the head of the linked_list
             this->add_front(index);
-        }else{
+        } else {
             //Remove the tail Item from the linked_list and add the current_block to the head of the linked list
             this->remove_last();
             this->add_front(index);
@@ -145,27 +144,27 @@ public:
             this->head->prev = node;
             this->head = node;
         }
-        //Add to Map. 
-        this->add_node_to_map(index,node);
+        //Add to Map.
+        this->add_node_to_map(index, node);
         this->length++;
     }
 
-    void add_node_to_map(int index,Node* node){
+    void add_node_to_map(int index, Node* node) {
         this->page_indexes[index] = node;
     }
 
-    void remove_node_from_map(int index){
+    void remove_node_from_map(int index) {
         this->page_indexes.erase(index);
     }
 
     //Can give Found Node Or Can Give Tail.
     node_presence get_node(int index) {
-        //Lookup in the Map to Find the Key. 
+        //Lookup in the Map to Find the Key.
         node_presence node_found;
         Node* head = this->head;
         node_found.found = false;
         node_found.node = head;
-        if(!(this->page_indexes.find(index) == this->page_indexes.end())){
+        if (!(this->page_indexes.find(index) == this->page_indexes.end())) {
             node_found.node = this->page_indexes[index];
             node_found.found = true;
         }
@@ -201,20 +200,20 @@ public:
         Node* next_node;
         next_node = deletion_node->next;
         prev_node = deletion_node->prev;
-        if(deletion_node == this->head){
+        if (deletion_node == this->head) {
             next_node->prev = NULL;
             this->head = next_node;
-        }else if (deletion_node == this->tail){
+        } else if (deletion_node == this->tail) {
             prev_node->next = NULL;
             this->tail = prev_node;
-        }else{
-            if(prev_node!=NULL){
+        } else {
+            if (prev_node != NULL) {
                 prev_node->next = next_node;
             }
             if (next_node != NULL) {
                 next_node->prev = prev_node;
             }
-        }    
+        }
         this->remove_node_from_map(deletion_node->index);
         this->length--;
         delete deletion_node;
@@ -243,37 +242,69 @@ public:
         }
     }
 
-    void print_cache_stats(){        
+    void print_cache_stats() {
         cout << "Number Of Hits : " << this->num_hits << endl;
         cout << "Number Of Misses : " << this->num_misses << endl;
         cout << "Total Cache Visits : " << this->cache_access << endl;
-        cout << "Hit Ratio : " << (this->num_hits) << "/" << (this->cache_access) << " = " << (float)(this->num_hits)/(float)(this->cache_access) << endl;
+        cout << "Hit Ratio : " << (this->num_hits) << "/" << (this->cache_access) << " = " << (float)(this->num_hits) / (float)(this->cache_access) << endl;
     }
 };
 
-class Arc_Window{
+class Arc_Window {
 public:
     int WINDOW_SIZE;
     int num_hits;
     int num_misses;
     int num_access;
     Arc_Window();
-    Cache_Linked_List* frequently_used_lru;
-    Cache_Linked_List* first_time_access_lru;
+    Cache_Linked_List* frequently_used_lru_top; //Part of Window..
+    Cache_Linked_List* frequently_used_lru_bottom;
 
-    Arc_Window(int window_size){
+    Cache_Linked_List* first_time_access_lru_top; //Part of Window..
+    Cache_Linked_List* first_time_access_lru_bottom;
+
+    Arc_Window(int window_size) {
         WINDOW_SIZE = window_size;
-        frequently_used_lru = new Cache_Linked_List(window_size);
-        first_time_access_lru = new Cache_Linked_List(window_size);
-        num_hits   = 0;
+        first_time_access_lru_top = new Cache_Linked_List(window_size);
+        first_time_access_lru_bottom = new Cache_Linked_List(window_size);
+        frequently_used_lru_top = new Cache_Linked_List(window_size);
+        frequently_used_lru_bottom = new Cache_Linked_List(window_size);
+        num_hits = 0;
         num_misses = 0;
         num_access = 0;
     }
 
-    void access_cache(int start_block_index, int block_size){
+    void access_cache(int start_block_index, int block_size) {
+        /**
+         * Algorithm : twos LRU caches -> frequently used cache and once accessed cache.
+         * 
+        */
 
+        for (int i = start_block_index; i < start_block_index + block_size; i++) {
+            int current_block_index = i;
+            node_presence node_top2 = frequently_used_lru_top->get_node(current_block_index);
+            node_presence node_top1 = first_time_access_lru_top->get_node(current_block_index); 
+            node_presence node_bottom1 = first_time_access_lru_bottom->get_node(current_block_index); 
+            node_presence node_bottom2 = frequently_used_lru_bottom->get_node(current_block_index); 
+            int adaptation_parameter = 0;
+            if(node_top2.found || node_top1.found){
+            //Case 1 : xt in first_time_access_lru_top || frequently_used_lru_top
+                // move xt to top of frequently_used_lru_top
+            }else if(node_bottom1.found){ // found in first_time_access_lru_bottom
+
+            }else if(node_bottom2.found){ // found in frequently_used_lru_bottom
+
+            }else{
+                //Cache Miss everywhere. 
+                if(first_time_access_lru_bottom->length +first_time_access_lru_top->length == WINDOW_SIZE){
+
+                }else{
+                    
+                }
+                //finally, fetch xt to the cache and move it to MRU position in first_time_access_lru_top
+            }
+        }
     }
-
 };
 
 std::vector<int> split_string_to_int(std::string str, std::string sep) {
@@ -310,8 +341,7 @@ vector<lis_input> retrive_cache_info(string file_path) {
     return cache_blocks;
 }
 
-void test_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages){
-
+void test_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
 }
 
 void test_lru_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
@@ -340,8 +370,8 @@ void check_lru_cache(vector<lis_input> cache_blocks, int cache_num_pages) {
     Cache_Linked_List* lru_cache = new Cache_Linked_List(cache_num_pages);
     vector<lis_input>::iterator itr;
     int total = cache_blocks.size();
-    for(itr=cache_blocks.begin();itr<cache_blocks.end();itr++){
-        lru_cache->access_cache(itr->starting_block,itr->number_of_blocks);
+    for (itr = cache_blocks.begin(); itr < cache_blocks.end(); itr++) {
+        lru_cache->access_cache(itr->starting_block, itr->number_of_blocks);
     }
     lru_cache->print_cache_stats();
 }
