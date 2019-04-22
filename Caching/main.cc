@@ -329,14 +329,14 @@ public:
 
             }else if(node_bottom1.found){ // found in first_time_access_lru_bottom
                 //TODO  : Cache Miss In Arc. 
-                cout << "Hit IN  B1" << endl;
+                //cout << "Hit IN  B1" << endl;
                 adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,false);
                 replace_node(false,adaptation_parameter);
                 first_time_access_lru_bottom->del(node_bottom1.node);
                 frequently_used_lru_top->add_front(current_block_index);
                 this->miss();
             }else if(node_bottom2.found){ // found in frequently_used_lru_bottom
-                cout << "Hit IN  B2" << endl;
+                //cout << "Hit IN  B2" << endl;
                 //TODO : Cache Miss ON Arc. 
                 adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,true);
                 replace_node(true,adaptation_parameter);
@@ -344,10 +344,10 @@ public:
                 frequently_used_lru_top->add_front(current_block_index);
                 this->miss();
             }else{
-                cout << "Complete Cache Miss" << endl;
+                //cout << "Complete Cache Miss" << endl;
                 //TODO: Cache Miss everywhere. 
                 if(first_time_access_lru_bottom->length +first_time_access_lru_top->length == WINDOW_SIZE){
-                    if(frequently_used_lru_top->length < WINDOW_SIZE){
+                    if(first_time_access_lru_top->length < WINDOW_SIZE){
                         //Delete LRU page in B1. REPLACE .
                         first_time_access_lru_bottom->remove_last();
                         replace_node(false,adaptation_parameter);
@@ -370,7 +370,7 @@ public:
                 first_time_access_lru_top->add_front(current_block_index);
                 this->miss();
             }
-            cout << "Cache Sizes and Adaptation Param : b1 t1 t2 b2 Adptation Param " << first_time_access_lru_bottom->length << " " << first_time_access_lru_top->length << " " <<frequently_used_lru_top->length << " " <<frequently_used_lru_bottom->length << " " << adaptation_parameter << endl;
+            //cout << "Cache Sizes and Adaptation Param : b1 t1 t2 b2 Adptation Param " << first_time_access_lru_bottom->length << " " << first_time_access_lru_top->length << " " <<frequently_used_lru_top->length << " " <<frequently_used_lru_bottom->length << " " << adaptation_parameter << endl;
             //usleep(2000);
         }
     }
@@ -388,14 +388,18 @@ public:
             if(frequently_used_lru_bottom->length >= first_time_access_lru_bottom->length){
                 delta = 1;
             }else{
-                delta = static_cast<int>(first_time_access_lru_bottom->length/frequently_used_lru_bottom->length);
+                if(frequently_used_lru_bottom->length > 0 ){
+                    delta = static_cast<int>(first_time_access_lru_bottom->length/frequently_used_lru_bottom->length);
+                }
             }
             return max(adaptation_param-delta,0);
         }else{ // first_time_access Adaptation
             if(first_time_access_lru_bottom->length >= frequently_used_lru_bottom->length){
                 delta = 1;
             }else{
-                delta = static_cast<int>(frequently_used_lru_bottom->length/first_time_access_lru_bottom->length);
+                if(first_time_access_lru_bottom->length > 0){
+                    delta = static_cast<int>(frequently_used_lru_bottom->length/first_time_access_lru_bottom->length);
+                }
             }
             return min(adaptation_param+delta,WINDOW_SIZE);
         }
