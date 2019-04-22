@@ -126,9 +126,15 @@ public:
 
     void remove_last() { //Remove the Last Item from the List.
         Node* last_node = this->tail;
-        Node* previous_to_last_node = last_node->prev;
-        previous_to_last_node->next = NULL;
-        this->tail = previous_to_last_node;
+        if(last_node == this->head){
+            //cout << "Deleting Head/Tail Node ! :" << endl;
+            this->head = NULL;
+            this->tail = NULL;
+        }else{
+            Node* previous_to_last_node = last_node->prev;
+            previous_to_last_node->next = NULL;
+            this->tail = previous_to_last_node;
+        }
         this->length--;
         //: Remove From Map.
         this->remove_node_from_map(last_node->index);
@@ -201,7 +207,11 @@ public:
         Node* next_node;
         next_node = deletion_node->next;
         prev_node = deletion_node->prev;
-        if (deletion_node == this->head) {
+        if (this->tail == this->head) {
+            this->tail = NULL;
+            this->head = NULL;
+        }
+        else if (deletion_node == this->head) {
             next_node->prev = NULL;
             this->head = next_node;
         } else if (deletion_node == this->tail) {
@@ -300,7 +310,7 @@ public:
             node_presence node_bottom2 = frequently_used_lru_bottom->get_node(current_block_index);
              
             if(node_top2.found || node_top1.found){ //xt in first_time_access_lru_top || frequently_used_lru_top
-                cout << "Hit IN  T1/T2" << endl;
+                //cout << "Hit IN  T1/T2" << endl;
                 //Cache Hit In Arc
                 if(node_top2.found){
                     //Check if it is not the head. 
@@ -361,7 +371,7 @@ public:
                 this->miss();
             }
             cout << "Cache Sizes and Adaptation Param : b1 t1 t2 b2 Adptation Param " << first_time_access_lru_bottom->length << " " << first_time_access_lru_top->length << " " <<frequently_used_lru_top->length << " " <<frequently_used_lru_bottom->length << " " << adaptation_parameter << endl;
-            usleep(2000);
+            //usleep(2000);
         }
     }
 
@@ -395,12 +405,14 @@ public:
         //Fill The Method Here. 
         if((first_time_access_lru_top->length > 0) && ((first_time_access_lru_top->length > adaptation_parameter) || (first_time_access_lru_top->length == adaptation_parameter && frequenty_used_cache_presence))){
             int transfer_index = first_time_access_lru_top->tail->index;    
+            //cout << "Replacing Node From first_time_access_lru_top " << transfer_index << endl;
             first_time_access_lru_top->remove_last();
             first_time_access_lru_bottom->add_front(transfer_index);
         }else{
             int transfer_index = frequently_used_lru_top->tail->index;    
+            //cout << "Replacing Node From frequently_used_lru_top " << transfer_index << endl;
             frequently_used_lru_top->remove_last();
-            frequently_used_lru_top->add_front(transfer_index);
+            frequently_used_lru_bottom->add_front(transfer_index);
         }
 
     }
@@ -479,8 +491,13 @@ void  check_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages){
     Arc_Window* arc = new Arc_Window(cache_num_pages);
     vector<lis_input>::iterator itr;
     int total = cache_blocks.size();
+    int counter =0;
     for (itr = cache_blocks.begin(); itr < cache_blocks.end(); itr++) {
         arc->access_cache(itr->starting_block, itr->number_of_blocks);
+        counter++;
+        if(counter % 10000== 0){
+            cout << "Completed : " << (counter) << " "<< total<<" Of The Dataset" << endl;
+        }
     }
     arc->print_cache_stats();
 }
