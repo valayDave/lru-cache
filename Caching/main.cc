@@ -419,7 +419,7 @@ public:
         cout << "Number Of Hits : " << this->num_hits << endl;
         cout << "Number Of Misses : " << this->num_misses << endl;
         cout << "Total Cache Visits : " << this->num_access << endl;
-        cout << "Hit Percent : " << (this->num_hits) << "/" << (this->num_access) << " = " << ((float)(this->num_hits) / (float)(this->num_access))*100 << endl;
+        cout << "Hit Percent : " << (this->num_hits) << "/" << (this->num_access) << " = " << ((float)(this->num_hits) / (float)(this->num_access)) << endl;
     }
 
     double adjust_adaptation_rate(double adaptation_parameter, bool adaptation_param){
