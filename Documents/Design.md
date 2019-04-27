@@ -1,4 +1,4 @@
-# LRU CACHE Implementation
+# ARC CACHE Implementation
 
 ## Bugs 
 - None Detected
