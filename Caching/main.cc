@@ -301,7 +301,7 @@ public:
          * 
         */
 
-        int adaptation_parameter = 0;
+        double adaptation_parameter = 0;
         for (int i = start_block_index; i < start_block_index + block_size; i++) {
             int current_block_index = i;
             node_presence node_top2 = frequently_used_lru_top->get_node(current_block_index);
@@ -322,7 +322,9 @@ public:
                 }else{
                     //Doubt : Check if Found in first_time_access_lru_top, should it be removed or not. 
                     first_time_access_lru_top->del(node_top1.node);
+                    sanitize_frequently_used_cache();
                     // move xt to top of frequently_used_lru_top
+                    //TODO : Check for the Size of B2+T2 : IF THEY ARE LARGER THAN REMOVE FROM B2 
                     frequently_used_lru_top->add_front(current_block_index);
                 }
                 this->hit();
@@ -333,6 +335,7 @@ public:
                 adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,false);
                 replace_node(false,adaptation_parameter);
                 first_time_access_lru_bottom->del(node_bottom1.node);
+                sanitize_frequently_used_cache();
                 frequently_used_lru_top->add_front(current_block_index);
                 this->miss();
             }else if(node_bottom2.found){ // found in frequently_used_lru_bottom
@@ -341,6 +344,7 @@ public:
                 adaptation_parameter = adjust_adaptation_rate(adaptation_parameter,true);
                 replace_node(true,adaptation_parameter);
                 frequently_used_lru_bottom->del(node_bottom2.node);
+                sanitize_frequently_used_cache();
                 frequently_used_lru_top->add_front(current_block_index);
                 this->miss();
             }else{
@@ -371,8 +375,33 @@ public:
                 this->miss();
             }
             //cout << "Cache Sizes and Adaptation Param : b1 t1 t2 b2 Adptation Param " << first_time_access_lru_bottom->length << " " << first_time_access_lru_top->length << " " <<frequently_used_lru_top->length << " " <<frequently_used_lru_bottom->length << " " << adaptation_parameter << endl;
+            check_cache_sizes();
             //usleep(2000);
         }
+    }
+
+    void check_cache_sizes(){
+        if(frequently_used_lru_top->length + frequently_used_lru_bottom->length > WINDOW_SIZE){
+            cout << "frequently_used_lru Cache Excess Size : " << frequently_used_lru_top->length + frequently_used_lru_bottom->length <<endl;
+        }
+        if(first_time_access_lru_top->length + first_time_access_lru_bottom->length > WINDOW_SIZE){
+            cout << "first_time_access_lru Cache Excess Size : " << first_time_access_lru_top->length + first_time_access_lru_bottom->length <<endl;
+        }
+        if(frequently_used_lru_top->length + frequently_used_lru_bottom->length + first_time_access_lru_top->length + first_time_access_lru_bottom->length> 2*WINDOW_SIZE){
+            cout << "TOTAL Cache WINDOW Excess Size : " <<frequently_used_lru_top->length + frequently_used_lru_bottom->length + first_time_access_lru_top->length + first_time_access_lru_bottom->length <<endl;
+        }
+
+        if(frequently_used_lru_top->length + first_time_access_lru_top->length > WINDOW_SIZE){
+            cout << "ARC WINDOW Excess Size : " <<frequently_used_lru_top->length + first_time_access_lru_top->length <<endl;
+        }
+    }
+
+    void sanitize_frequently_used_cache(){
+        if(frequently_used_lru_top->length + frequently_used_lru_bottom->length == WINDOW_SIZE){
+            frequently_used_lru_bottom->remove_last();
+            //cout << "frequently_used_lru :: " << frequently_used_lru_top->length << " " <<   frequently_used_lru_bottom->length << endl;
+        }
+        return ;
     }
 
     void print_cache_stats() {
@@ -382,30 +411,30 @@ public:
         cout << "Hit Ratio : " << (this->num_hits) << "/" << (this->num_access) << " = " << (float)(this->num_hits) / (float)(this->num_access) << endl;
     }
 
-    int adjust_adaptation_rate(int adaptation_parameter, bool adaptation_param){
-        int delta = 0;
+    double adjust_adaptation_rate(double adaptation_parameter, bool adaptation_param){
+        double delta = 0;
         if(adaptation_param){ // Frequency Adaptation
             if(frequently_used_lru_bottom->length >= first_time_access_lru_bottom->length){
                 delta = 1;
             }else{
                 if(frequently_used_lru_bottom->length > 0 ){
-                    delta = static_cast<int>(first_time_access_lru_bottom->length/frequently_used_lru_bottom->length);
+                    delta = ((double)first_time_access_lru_bottom->length/(double)frequently_used_lru_bottom->length);
                 }
             }
-            return max(adaptation_param-delta,0);
+            return max(adaptation_param-delta,(double)0);
         }else{ // first_time_access Adaptation
             if(first_time_access_lru_bottom->length >= frequently_used_lru_bottom->length){
                 delta = 1;
             }else{
                 if(first_time_access_lru_bottom->length > 0){
-                    delta = static_cast<int>(frequently_used_lru_bottom->length/first_time_access_lru_bottom->length);
+                    delta = ((double)frequently_used_lru_bottom->length/(double)first_time_access_lru_bottom->length);
                 }
             }
-            return min(adaptation_param+delta,WINDOW_SIZE);
+            return min(adaptation_param+delta,(double)WINDOW_SIZE);
         }
 
     }
-    void replace_node(bool frequenty_used_cache_presence,int adaptation_parameter){
+    void replace_node(bool frequenty_used_cache_presence,double adaptation_parameter){
         //Fill The Method Here. 
         if((first_time_access_lru_top->length > 0) && ((first_time_access_lru_top->length > adaptation_parameter) || (first_time_access_lru_top->length == adaptation_parameter && frequenty_used_cache_presence))){
             int transfer_index = first_time_access_lru_top->tail->index;    
@@ -501,10 +530,13 @@ void  check_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages){
         counter++;
         if(counter % 10000== 0){
             cout << "Completed : " << (counter) << " "<< total<<" Of The Dataset" << endl;
+            arc->print_cache_stats();
+            cout << " " << endl;
         }
     }
     arc->print_cache_stats();
 }
+
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -518,8 +550,9 @@ int main(int argc, char* argv[]) {
     trace_file_name += ".lis";
     vector<lis_input> cache_blocks = retrive_cache_info(trace_file_name);
     //check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
-    check_arc_cache(cache_blocks, NUMBER_OF_PAGES);
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    check_arc_cache(cache_blocks, NUMBER_OF_PAGES);
+    check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
     cout << "TIME TAKEN BY THE CODE : " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << endl;
     //TODO : Create a Linked list for each of the values in the trace_file.
 }
