@@ -299,7 +299,7 @@ public:
         this->num_access++;
     }
 
-    void access_cache(int start_block_index, int block_size,bool print_param) {
+    void access_cache(int start_block_index, int block_size) {
         /**
          * Algorithm : twos LRU caches -> frequently used cache and once accessed cache.
          * 
@@ -389,11 +389,6 @@ public:
             max_adaptation_param = max(max_adaptation_param,this->adaptation_parameter);
             //usleep(2000);
         }
-
-        if(print_param){
-            cout << "Max Value Of Adaptation Parameter : " << max_adaptation_param << endl;
-        }
-
     }
 
     void check_cache_sizes(){
@@ -412,12 +407,6 @@ public:
         }
     }
 
-    void add_to_frequenty_used_cache(){
-        if(frequently_used_lru_top->length + frequently_used_lru_bottom->length == WINDOW_SIZE){
-            frequently_used_lru_bottom->remove_last();
-            //cout << "frequently_used_lru :: " << frequently_used_lru_top->length << " " <<   frequently_used_lru_bottom->length << endl;
-        }
-    }
     void sanitize_frequently_used_cache(){
         if(frequently_used_lru_top->length + frequently_used_lru_bottom->length == WINDOW_SIZE){
             frequently_used_lru_bottom->remove_last();
@@ -430,7 +419,6 @@ public:
         cout << "Number Of Hits : " << this->num_hits << endl;
         cout << "Number Of Misses : " << this->num_misses << endl;
         cout << "Total Cache Visits : " << this->num_access << endl;
-        cout << "TOTAL ALL CACHE HITS :" << this->total_both_cache_hits << endl;
         cout << "Hit Percent : " << (this->num_hits) << "/" << (this->num_access) << " = " << ((float)(this->num_hits) / (float)(this->num_access))*100 << endl;
     }
 
@@ -550,15 +538,7 @@ void  check_arc_cache(vector<lis_input> cache_blocks, int cache_num_pages){
     int total = cache_blocks.size();
     int counter =0;
     for (itr = cache_blocks.begin(); itr < cache_blocks.end(); itr++) {
-        counter++;
-        if(counter % 10000== 0){
-            cout << "Completed : " << (counter) << " "<< total<<" Of The Dataset" << endl;
-            arc->access_cache(itr->starting_block, itr->number_of_blocks,true);
-            arc->print_cache_stats();
-            cout << " " << endl;
-        }else{
-            arc->access_cache(itr->starting_block, itr->number_of_blocks,false);
-        }
+        arc->access_cache(itr->starting_block, itr->number_of_blocks);
     }
     arc->print_cache_stats();
 }
@@ -578,7 +558,6 @@ int main(int argc, char* argv[]) {
     //check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     check_arc_cache(cache_blocks, NUMBER_OF_PAGES);
-    check_lru_cache(cache_blocks, NUMBER_OF_PAGES);
     cout << "TIME TAKEN BY THE CODE : " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << endl;
     //TODO : Create a Linked list for each of the values in the trace_file.
 }
